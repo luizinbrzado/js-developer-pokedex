@@ -1,9 +1,11 @@
-const pokemonList = document.getElementById('pokemonList')
-const loadMoreButton = document.getElementById('loadMoreButton')
-
-const maxRecords = 151
-const limit = 10
+const pokemonList = document.getElementById('pokemonList');
+const loadMoreButton = document.getElementById('loadMoreButton');
+const filterByTypeButton = document.getElementById('filterByTypeButton');
+const filterTypeInput = document.getElementById('filterTypeInput');
+const maxRecords = 151;
+const limit = 10;
 let offset = 0;
+let currentTypeFilter = '';
 
 function convertPokemonToLi(pokemon) {
     return `
@@ -16,32 +18,39 @@ function convertPokemonToLi(pokemon) {
                     ${pokemon.types.map((type) => `<li class="type ${type}">${type}</li>`).join('')}
                 </ol>
 
-                <img src="${pokemon.photo}"
-                     alt="${pokemon.name}">
+                <img src="${pokemon.photo}" alt="${pokemon.name}">
             </div>
         </li>
-    `
+    `;
 }
 
-function loadPokemonItens(offset, limit) {
-    pokeApi.getPokemons(offset, limit).then((pokemons = []) => {
-        const newHtml = pokemons.map(convertPokemonToLi).join('')
-        pokemonList.innerHTML += newHtml
-    })
+function loadFilteredPokemon(typeFilter) {
+    pokeApi.getPokemons()
+        .then((pokemons = []) => {
+            const filteredPokemons = typeFilter
+                ? pokemons.filter((pokemon) => pokemon.types.includes(typeFilter))
+                : pokemons;
+
+            const newHtml = filteredPokemons.map(convertPokemonToLi).join('');
+            pokemonList.innerHTML = newHtml;
+        })
+        .catch((error) => {
+            console.error('Error loading Pokémon:', error);
+        });
 }
 
-loadPokemonItens(offset, limit)
+loadFilteredPokemon(offset, limit);
 
-loadMoreButton.addEventListener('click', () => {
-    offset += limit
-    const qtdRecordsWithNexPage = offset + limit
+filterByTypeButton.addEventListener('click', () => {
+    const typeFilter = filterTypeInput.value.toLowerCase();
+    pokemonList.innerHTML = '';
+    loadFilteredPokemon(typeFilter);
+});
 
-    if (qtdRecordsWithNexPage >= maxRecords) {
-        const newLimit = maxRecords - offset
-        loadPokemonItens(offset, newLimit)
-
-        loadMoreButton.parentElement.removeChild(loadMoreButton)
-    } else {
-        loadPokemonItens(offset, limit)
+filterTypeInput.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+        const typeFilter = filterTypeInput.value.toLowerCase();
+        pokemonList.innerHTML = '';
+        loadFilteredPokemon(typeFilter);
     }
-})
+});
